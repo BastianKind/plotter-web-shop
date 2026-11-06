@@ -2,6 +2,10 @@
 
 Clickable prototype of the plotter web shop, built for the M241/M245 user tests and the "Höhle der Löwen" pitch. Customers write a note, and a machine writes it on paper with a real pen. Nothing is ordered, sent or charged.
 
+**Live:** https://bastiankind.github.io/plotter-web-shop/
+
+Every push to `master` builds the site and publishes it to GitHub Pages (`.github/workflows/deploy.yml`). The repo's Pages source has to be set to **GitHub Actions** once in Settings → Pages.
+
 ## Run it
 
 ```bash
