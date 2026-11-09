@@ -11,6 +11,8 @@ export interface FormatInfo {
   orientation: 'Portrait' | 'Landscape';
   noun: string;
   badge?: string;
+  /** Page margin in mm that the align buttons snap to. */
+  margin: number;
   /** Handwriting sizes in mm, before the handwriting style's own factor. */
   type: { small: number; medium: number; large: number; lead: number };
 }
@@ -25,6 +27,7 @@ export const FORMATS: Record<FormatKey, FormatInfo> = {
     blurb: 'For longer letters & big ideas.',
     orientation: 'Portrait',
     noun: 'note',
+    margin: 22,
     type: { small: 6, medium: 8.5, large: 11, lead: 12 },
   },
   a5: {
@@ -37,6 +40,7 @@ export const FORMATS: Record<FormatKey, FormatInfo> = {
     orientation: 'Portrait',
     noun: 'note',
     badge: 'A little favorite',
+    margin: 16,
     type: { small: 4.6, medium: 6.4, large: 8.4, lead: 9 },
   },
   card: {
@@ -48,6 +52,7 @@ export const FORMATS: Record<FormatKey, FormatInfo> = {
     blurb: 'Small in size. Lasting in impression.',
     orientation: 'Landscape',
     noun: 'card',
+    margin: 5,
     type: { small: 2.8, medium: 4, large: 6, lead: 6.2 },
   },
 };

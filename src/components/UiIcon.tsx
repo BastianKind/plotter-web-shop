@@ -87,6 +87,48 @@ const ICONS = {
   alignCenter: <path d="M4 6h16M7 10h10M4 14h16M7 18h10" />,
   alignRight: <path d="M4 6h16M10 10h10M4 14h16M10 18h10" />,
   alignJustify: <path d="M4 6h16M4 10h16M4 14h16M4 18h16" />,
+  placeLeft: (
+    <>
+      <path d="M4 3.5v17" />
+      <rect x="7.5" y="6" width="12" height="4.5" rx="1" />
+      <rect x="7.5" y="13.5" width="7" height="4.5" rx="1" />
+    </>
+  ),
+  placeCenter: (
+    <>
+      <path d="M12 3.5v17" />
+      <rect x="5" y="6" width="14" height="4.5" rx="1" />
+      <rect x="7.5" y="13.5" width="9" height="4.5" rx="1" />
+    </>
+  ),
+  placeRight: (
+    <>
+      <path d="M20 3.5v17" />
+      <rect x="4.5" y="6" width="12" height="4.5" rx="1" />
+      <rect x="9.5" y="13.5" width="7" height="4.5" rx="1" />
+    </>
+  ),
+  placeTop: (
+    <>
+      <path d="M3.5 4h17" />
+      <rect x="6" y="7.5" width="4.5" height="12" rx="1" />
+      <rect x="13.5" y="7.5" width="4.5" height="7" rx="1" />
+    </>
+  ),
+  placeMiddle: (
+    <>
+      <path d="M3.5 12h17" />
+      <rect x="6" y="5" width="4.5" height="14" rx="1" />
+      <rect x="13.5" y="7.5" width="4.5" height="9" rx="1" />
+    </>
+  ),
+  placeBottom: (
+    <>
+      <path d="M3.5 20h17" />
+      <rect x="6" y="4.5" width="4.5" height="12" rx="1" />
+      <rect x="13.5" y="9.5" width="4.5" height="7" rx="1" />
+    </>
+  ),
   text: (
     <>
       <path d="M5 6.5V4.5h14v2" />

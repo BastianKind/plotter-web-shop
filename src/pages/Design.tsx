@@ -17,10 +17,23 @@ import { useShop } from '../state/shop';
 import type { Align, HandKey, InkKey, SizeKey } from '../types';
 
 const ALIGNS: { value: Align; icon: UiIconName; label: string }[] = [
-  { value: 'left', icon: 'alignLeft', label: 'Align left' },
-  { value: 'center', icon: 'alignCenter', label: 'Center' },
-  { value: 'right', icon: 'alignRight', label: 'Align right' },
-  { value: 'justify', icon: 'alignJustify', label: 'Justify' },
+  { value: 'left', icon: 'alignLeft', label: 'Text left' },
+  { value: 'center', icon: 'alignCenter', label: 'Text centered' },
+  { value: 'right', icon: 'alignRight', label: 'Text right' },
+  { value: 'justify', icon: 'alignJustify', label: 'Justify text' },
+];
+
+type Place = 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom';
+
+const PLACE_X: { value: Place; icon: UiIconName; label: string }[] = [
+  { value: 'left', icon: 'placeLeft', label: 'Align left' },
+  { value: 'center', icon: 'placeCenter', label: 'Center horizontally' },
+  { value: 'right', icon: 'placeRight', label: 'Align right' },
+];
+const PLACE_Y: { value: Place; icon: UiIconName; label: string }[] = [
+  { value: 'top', icon: 'placeTop', label: 'Align top' },
+  { value: 'middle', icon: 'placeMiddle', label: 'Center vertically' },
+  { value: 'bottom', icon: 'placeBottom', label: 'Align bottom' },
 ];
 
 type IconTab = 'all' | 'nature' | 'love';
@@ -95,6 +108,28 @@ export function Design() {
       ta?.focus();
       ta?.setSelectionRange(start + token.length, start + token.length);
     });
+  };
+
+  /** Snap the selected item to the page margin or the middle of the paper. */
+  const placeSelected = (where: Place) => {
+    if (!selected) return;
+    const m = F.margin;
+    const half = (v: number) => Math.round(v * 2) / 2;
+    const fitX = (x: number) => half(clamp(x, 0, F.w - selected.w));
+    const fitY = (y: number) => half(clamp(y, 0, F.h - selected.h));
+    const patch =
+      where === 'left'
+        ? { x: fitX(m) }
+        : where === 'center'
+          ? { x: fitX((F.w - selected.w) / 2) }
+          : where === 'right'
+            ? { x: fitX(F.w - m - selected.w) }
+            : where === 'top'
+              ? { y: fitY(m) }
+              : where === 'middle'
+                ? { y: fitY((F.h - selected.h) / 2) }
+                : { y: fitY(F.h - m - selected.h) };
+    dispatch({ type: 'UPDATE_ITEM', id: selected.id, commit: true, patch });
   };
 
   const onSvg = (file: File | undefined) => {
@@ -283,6 +318,30 @@ export function Design() {
                   />
                 </label>
               </div>
+            </div>
+
+            <div className="field">
+              <div className="label-row">
+                <span className="label">Align on paper</span>
+                <span className="counter">{F.margin} mm margin</span>
+              </div>
+              <div className="place-row">
+                {[PLACE_X, PLACE_Y].map((group, gi) => (
+                  <div key={gi} className="place-group" role="group" aria-label={gi === 0 ? 'Align horizontally' : 'Align vertically'}>
+                    {group.map((p) => (
+                      <Tooltip key={p.value} label={p.label}>
+                        <button type="button" className="align-btn" aria-label={p.label} disabled={!selected} onClick={() => placeSelected(p.value)}>
+                          <UiIcon name={p.icon} size={17} />
+                        </button>
+                      </Tooltip>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="field">
+              <span className="label">Text alignment</span>
               <div className="align-row" role="group" aria-label="Text alignment">
                 {ALIGNS.map((a) => (
                   <Tooltip key={a.value} label={a.label}>
