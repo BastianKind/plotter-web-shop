@@ -7,6 +7,7 @@ import { PaperEditor } from '../components/PaperEditor';
 import { PaperIcon } from '../components/PaperIcon';
 import { Select } from '../components/Select';
 import { useToast } from '../components/Toast';
+import { IconBrowser } from '../components/IconBrowser';
 import { Tooltip } from '../components/Tooltip';
 import { UiIcon, type UiIconName } from '../components/UiIcon';
 import { FORMATS, HAND_ORDER, HANDS, ICONS, INKS, SIZES } from '../data/catalog';
@@ -53,6 +54,7 @@ export function Design() {
   const [tab, setTab] = useState<IconTab>('all');
   const [zoom, setZoom] = useState(1);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [browserOpen, setBrowserOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [stage, setStage] = useState({ w: 640, h: 560 });
   const stageRef = useRef<HTMLDivElement>(null);
@@ -447,6 +449,9 @@ export function Design() {
                 </Tooltip>
               ))}
             </div>
+            <button type="button" className="btn btn-secondary btn-sm btn-browse" onClick={() => setBrowserOpen(true)}>
+              <UiIcon name="search" size={16} /> Browse 1,300+ icons
+            </button>
             <label className="btn-dashed" htmlFor="svg-upload">
               <UiIcon name="upload" size={16} /> Upload your own SVG
             </label>
@@ -525,6 +530,16 @@ export function Design() {
         </div>
         {bulk && <Pager />}
       </Modal>
+
+      <IconBrowser
+        open={browserOpen}
+        onClose={() => setBrowserOpen(false)}
+        onPick={(icon) => {
+          dispatch({ type: 'ADD_SVG', markup: icon.markup, name: icon.name });
+          setBrowserOpen(false);
+          toast(`${icon.label} added to your paper`, 'success');
+        }}
+      />
     </div>
   );
 }

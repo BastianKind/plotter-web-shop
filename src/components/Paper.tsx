@@ -47,6 +47,8 @@ function TextContent({ item, format, look, recipient, scale }: { item: TextItem;
 export function ItemContent({ item, format, look, recipient, scale }: { item: Item; format: FormatKey; look: Look; recipient: Recipient | null; scale: number }) {
   if (item.kind === 'text') return <TextContent item={item} format={format} look={look} recipient={recipient} scale={scale} />;
   if (item.kind === 'icon') return <PaperIcon icon={item.icon} color={INKS[look.ink].color} />;
+  // Markup comes from the bundled Iconoir package, not from users.
+  if (item.kind === 'svg') return <span className="psvg" style={{ color: INKS[look.ink].color }} dangerouslySetInnerHTML={{ __html: item.markup }} />;
   return <img className="pimg" src={item.src} alt={item.name} draggable={false} />;
 }
 

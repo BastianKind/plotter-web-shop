@@ -1005,6 +1005,18 @@ select.input {
   background: rgb(220 130 20 / 0.24);
 }
 
+.psvg {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+.psvg svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 .pimg {
   width: 100%;
   height: 100%;

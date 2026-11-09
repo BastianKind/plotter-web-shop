@@ -51,7 +51,15 @@ export interface ImageItem extends Box {
   name: string;
 }
 
-export type Item = TextItem | IconItem | ImageItem;
+/** A line icon from the Iconoir library, drawn in the ink colour. */
+export interface SvgItem extends Box {
+  id: string;
+  kind: 'svg';
+  name: string;
+  markup: string;
+}
+
+export type Item = TextItem | IconItem | ImageItem | SvgItem;
 
 export interface Recipient {
   first: string;

@@ -41,6 +41,7 @@ export type Action =
   | { type: 'ADD_TEXT' }
   | { type: 'ADD_ICON'; icon: IconKey }
   | { type: 'ADD_IMAGE'; src: string; name: string }
+  | { type: 'ADD_SVG'; markup: string; name: string }
   | { type: 'DUPLICATE' }
   | { type: 'REMOVE' }
   | { type: 'UNDO' }
@@ -149,13 +150,19 @@ function reducer(s: ShopState, a: Action): ShopState {
       return commitItems(s, [...s.items, item], item.id);
     }
     case 'ADD_ICON':
-    case 'ADD_IMAGE': {
+    case 'ADD_IMAGE':
+    case 'ADD_SVG': {
       const F = FORMATS[s.format];
       const size = Math.round(Math.min(F.w, F.h) * 0.16);
       // Line new marks up along the top edge so they don't land on top of each other.
       const slot = s.items.filter((i) => i.kind !== 'text').length % 4;
       const base = { id: newId(), x: Math.round(F.w * 0.1 + slot * (size + 4)), y: Math.round(F.h * 0.06), w: size, h: size };
-      const item: Item = a.type === 'ADD_ICON' ? { ...base, kind: 'icon', icon: a.icon } : { ...base, kind: 'image', src: a.src, name: a.name };
+      const item: Item =
+        a.type === 'ADD_ICON'
+          ? { ...base, kind: 'icon', icon: a.icon }
+          : a.type === 'ADD_SVG'
+            ? { ...base, kind: 'svg', markup: a.markup, name: a.name }
+            : { ...base, kind: 'image', src: a.src, name: a.name };
       return commitItems(s, [...s.items, item], item.id);
     }
     case 'DUPLICATE': {

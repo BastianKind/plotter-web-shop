@@ -10,6 +10,7 @@ const HANDLES: Exclude<DragMode, 'move'>[] = ['nw', 'ne', 'sw', 'se'];
 function itemLabel(item: Item) {
   if (item.kind === 'text') return 'Message · text';
   if (item.kind === 'icon') return `Icon · ${ICONS.find((i) => i.key === item.icon)?.label ?? item.icon}`;
+  if (item.kind === 'svg') return `Icon · ${item.name.replace(/-/g, ' ')}`;
   return `Image · ${item.name}`;
 }
 
