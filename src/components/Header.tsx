@@ -1,4 +1,4 @@
-import logo from '../assets/logo.webp';
+import logo from '../assets/logo.svg';
 import { useShop } from '../state/shop';
 import type { Step } from '../types';
 import { Tooltip } from './Tooltip';
