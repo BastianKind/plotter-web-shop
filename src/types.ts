@@ -1,5 +1,6 @@
 export type Step = 'paper' | 'recipients' | 'design' | 'checkout' | 'done';
-export type Mode = 'single' | 'bulk';
+/** One note to one address, the same design many times (e.g. business cards), or a personal card per recipient. */
+export type Mode = 'single' | 'copies' | 'bulk';
 export type FormatKey = 'a4' | 'a5' | 'card';
 export type HandKey = 'jamie' | 'noah' | 'lea' | 'own';
 export type InkKey = 'charcoal' | 'blue' | 'sepia';

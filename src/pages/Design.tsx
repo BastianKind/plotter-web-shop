@@ -12,7 +12,9 @@ import { UiIcon, type UiIconName } from '../components/UiIcon';
 import { FORMATS, HAND_ORDER, HANDS, ICONS, INKS, SIZES } from '../data/catalog';
 import { clamp } from '../lib/geometry';
 import { INSERTABLE, unknownTokens } from '../lib/personalize';
-import { bulkQuote, chf, singleQuote } from '../lib/pricing';
+import { bulkQuote, chf, copiesQuote, singleQuote } from '../lib/pricing';
+import { QtyInput } from '../components/QtyInput';
+import { MAX_COPIES } from '../state/shop';
 import { useShop } from '../state/shop';
 import type { Align, HandKey, InkKey, SizeKey } from '../types';
 
@@ -43,6 +45,7 @@ export function Design() {
   const toast = useToast();
   const F = FORMATS[state.format];
   const bulk = state.mode === 'bulk';
+  const copies = state.mode === 'copies';
   const selected = state.items.find((i) => i.id === state.selectedId) ?? null;
   const textItem = selected?.kind === 'text' ? selected : null;
   const recipient = bulk ? (state.recipients[state.previewIdx] ?? null) : null;
@@ -154,6 +157,7 @@ export function Design() {
   const icons = ICONS.filter((i) => tab === 'all' || i.group === tab);
   const single = singleQuote(state.format, state.look.hand, 1, false, 'standard');
   const bulkQ = bulkQuote(state.format, state.look.hand, state.recipients.length, state.delivery, state.bulkEnvelopes);
+  const copiesQ = copiesQuote(state.format, state.look.hand, state.copies, false, 'standard');
   const previewWidth = state.format === 'card' ? 520 : state.format === 'a4' ? 360 : 380;
 
   const handOptions = HAND_ORDER.map((k: HandKey) => ({
@@ -177,9 +181,14 @@ export function Design() {
       <div className="container">
         <div className="design-head">
           <div className="page-head">
-            <h1 className="page-title page-title-sm">{bulk ? 'One message, every name.' : 'A note, in your own words.'}</h1>
+            <h1 className="page-title page-title-sm">{bulk ? 'One message, every name.' : copies ? 'One design, many copies.' : 'A note, in your own words.'}</h1>
             <p className="page-sub">
-              {bulk ? 'Write it once and use First name to greet everyone personally.' : 'Write something lovely.'} Drag your text and icons to make it feel just right.
+              {bulk
+                ? 'Write it once and use First name to greet everyone personally.'
+                : copies
+                  ? 'Set it up once, and every copy is written with a real pen. Swap the icon for your logo with “Upload your own SVG”.'
+                  : 'Write something lovely.'}{' '}
+              Drag your text and icons to make it feel just right.
             </p>
           </div>
           <div className="design-actions">
@@ -415,7 +424,7 @@ export function Design() {
             <h2 className="panel-title">
               <UiIcon name="sparkle" /> Little extras
             </h2>
-            <p className="muted small">A small mark can say a lot. Choose an icon to add it to your paper.</p>
+            <p className="muted small">A small mark can say a lot. Choose an icon, or upload your logo as SVG.</p>
             <div className="tabs" role="tablist" aria-label="Icon groups">
               {(
                 [
@@ -477,6 +486,16 @@ export function Design() {
               <strong>{chf(bulkQ.total)}</strong>
               <span className="muted">
                 {bulkQ.count} × {F.label} · {chf(bulkQ.perCard)} each · {bulkQ.direct ? 'incl. postage' : 'delivered to one address'}
+              </span>
+            </span>
+          ) : copies ? (
+            <span className="bb-copies">
+              <QtyInput id="design-copies" label="Number of copies" value={state.copies} max={MAX_COPIES} onChange={(qty) => dispatch({ type: 'SET_COPIES', qty })} />
+              <span className="bb-price">
+                <strong>{chf(copiesQ.writing)}</strong>
+                <span className="muted">
+                  {state.copies} × {F.label} · {chf(copiesQ.perCard)} each · delivery at checkout
+                </span>
               </span>
             </span>
           ) : (

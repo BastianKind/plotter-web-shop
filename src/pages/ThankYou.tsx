@@ -5,6 +5,7 @@ import { UiIcon } from '../components/UiIcon';
 import { dayRange, schedule, shortDay } from '../lib/dates';
 import { chf } from '../lib/pricing';
 import { useShop } from '../state/shop';
+import { FORMATS } from '../data/catalog';
 
 function TruckScene() {
   return (
@@ -30,15 +31,18 @@ export function ThankYou() {
 
   const { start, end, posted, arrives } = schedule(order.count, order.express, new Date(order.placedAt));
   const bulk = order.mode === 'bulk';
+  const copies = order.mode === 'copies';
+  // Bulk shows three different personal cards; copies show three of the same.
+  const stack = bulk ? state.recipients.slice(0, 3) : copies ? [null, null, null] : [];
 
   return (
     <div className="page">
       <div className="container thanks">
         <div className="thanks-card">
           <p className="thanks-title">Thank you{order.firstName ? `, ${order.firstName}` : ''}!</p>
-          {bulk ? (
+          {stack.length ? (
             <div className="stack" aria-hidden="true">
-              {state.recipients.slice(0, 3).map((r, i) => (
+              {stack.map((r, i) => (
                 <PaperSurface key={i} format={state.format} look={state.look} items={state.items} recipient={r} width={state.format === 'card' ? 170 : 120} className={`stack-card stack-${i}`} />
               ))}
             </div>
@@ -48,7 +52,9 @@ export function ThankYou() {
           <p className="thanks-text">
             {bulk
               ? `${order.count} cards are in the writing queue.`
-              : `Your ${order.count > 1 ? 'notes are' : 'note is'} in the writing queue and will be out for delivery soon.`}
+              : copies
+                ? `${order.count} ${FORMATS[state.format].plural} are in the writing queue.`
+                : `Your ${order.count > 1 ? 'notes are' : 'note is'} in the writing queue and will be out for delivery soon.`}
             {state.look.hand === 'own' && ' We start as soon as your handwriting template is back.'}
           </p>
         </div>
@@ -77,7 +83,7 @@ export function ThankYou() {
 
         <div className="thanks-actions">
           <button type="button" className="btn btn-secondary" onClick={() => setViewOpen(true)}>
-            <UiIcon name="eye" /> View your {bulk ? 'cards' : 'note'}
+            <UiIcon name="eye" /> View your {bulk ? 'cards' : copies ? 'design' : 'note'}
           </button>
           <button type="button" className="btn btn-primary" onClick={() => dispatch({ type: 'NEW_ORDER' })}>
             To home page <UiIcon name="arrowRight" />
@@ -85,7 +91,7 @@ export function ThankYou() {
         </div>
       </div>
 
-      <Modal open={viewOpen} onClose={() => setViewOpen(false)} title={bulk ? 'Your cards' : 'Your note'} wide>
+      <Modal open={viewOpen} onClose={() => setViewOpen(false)} title={bulk ? 'Your cards' : copies ? 'Your design' : 'Your note'} wide>
         <div className="preview-desk">
           <PaperSurface
             format={state.format}

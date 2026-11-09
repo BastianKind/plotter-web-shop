@@ -10,6 +10,8 @@ export interface FormatInfo {
   blurb: string;
   orientation: 'Portrait' | 'Landscape';
   noun: string;
+  /** Used for counts, e.g. "50 business cards". */
+  plural: string;
   badge?: string;
   /** Page margin in mm that the align buttons snap to. */
   margin: number;
@@ -27,6 +29,7 @@ export const FORMATS: Record<FormatKey, FormatInfo> = {
     blurb: 'For longer letters & big ideas.',
     orientation: 'Portrait',
     noun: 'note',
+    plural: 'A4 notes',
     margin: 22,
     type: { small: 6, medium: 8.5, large: 11, lead: 12 },
   },
@@ -39,6 +42,7 @@ export const FORMATS: Record<FormatKey, FormatInfo> = {
     blurb: 'A little room for something personal.',
     orientation: 'Portrait',
     noun: 'note',
+    plural: 'A5 notes',
     badge: 'A little favorite',
     margin: 16,
     type: { small: 4.6, medium: 6.4, large: 8.4, lead: 9 },
@@ -52,6 +56,7 @@ export const FORMATS: Record<FormatKey, FormatInfo> = {
     blurb: 'Small in size. Lasting in impression.',
     orientation: 'Landscape',
     noun: 'card',
+    plural: 'business cards',
     margin: 5,
     type: { small: 2.8, medium: 4, large: 6, lead: 6.2 },
   },

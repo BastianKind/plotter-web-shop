@@ -18,6 +18,7 @@ Then open http://localhost:5173.
 ## What you can click through
 
 - **One note:** choose the paper (A4, A5, business card), write and arrange the note, check out, see the confirmation.
+- **Many copies:** the same design many times without recipients, e.g. business cards with name, business, role and logo. Pick a quantity (10–2000), get volume prices, and everything is delivered to you.
 - **Bulk order:** pick "Sending to many", upload a recipient list (Excel `.xlsx` or CSV) or use the example list, write one message with `{first_name}`, and check every personal card before checkout.
 - **Editor:** drag and resize text and icons on the paper, add text boxes, icons or your own SVG, undo/redo (Ctrl+Z / Ctrl+Y), zoom, alignment, handwriting style, ink colour and a full-size preview.
 - **Pop-ups:** help/FAQ, preview, "start a fresh design?" confirmation, tooltips, toasts.

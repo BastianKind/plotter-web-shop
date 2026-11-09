@@ -2,15 +2,30 @@ import { useMemo, useState } from 'react';
 import { BottomBar } from '../components/Bars';
 import { Modal } from '../components/Modal';
 import { PaperSurface } from '../components/Paper';
+import { QtyInput } from '../components/QtyInput';
 import { Tooltip } from '../components/Tooltip';
 import { UiIcon, type UiIconName } from '../components/UiIcon';
 import { FORMAT_ORDER, FORMATS } from '../data/catalog';
 import { defaultItems } from '../data/defaults';
-import { chf, piecePrice, r05 } from '../lib/pricing';
-import { useShop } from '../state/shop';
+import { chf, copiesQuote, piecePrice, r05 } from '../lib/pricing';
+import { MAX_COPIES, useShop } from '../state/shop';
 import type { FormatKey, Mode } from '../types';
 
 const PREVIEW_WIDTH: Record<FormatKey, number> = { a4: 112, a5: 104, card: 168 };
+
+const MODES: { mode: Mode; icon: UiIconName; title: string; sub: string; tip?: string }[] = [
+  { mode: 'single', icon: 'user', title: 'Sending one note', sub: 'One note, one address' },
+  { mode: 'copies', icon: 'copy', title: 'Many copies', sub: 'Business cards, thank-you notes', tip: 'The same design many times, delivered to you. Volume price from 25 pieces.' },
+  { mode: 'bulk', icon: 'users', title: 'Sending to many', sub: 'A personal card per recipient', tip: 'Upload a list or type in names. Every card greets its recipient by name.' },
+];
+
+const QUICK_QTY = [10, 25, 50, 100, 250, 500];
+
+const MODE_SWITCH: Record<Mode, { button: string; body: string }> = {
+  single: { button: 'Switch to one note', body: 'A single note comes with its own starter design. Your current text and icons are replaced.' },
+  copies: { button: 'Switch to many copies', body: 'Many copies start with a design that’s the same on every piece, like a business card. Your current text and icons are replaced.' },
+  bulk: { button: 'Switch to bulk order', body: 'Bulk orders start with a design that greets every recipient by name. Your current text and icons are replaced.' },
+};
 
 const FEATURES: { icon: UiIconName; label: string; tip: string }[] = [
   { icon: 'pen', label: 'Written with real ink', tip: 'A real pen on real paper. No printer is involved.' },
@@ -39,7 +54,8 @@ export function ChoosePaper() {
   const { state, dispatch } = useShop();
   const [pending, setPending] = useState<Pending>(null);
   const edited = state.past.length > 0;
-  const bulk = state.mode === 'bulk';
+  const { mode } = state;
+  const volume = mode !== 'single';
 
   // Each card shows the starter design it opens with.
   const previews = useMemo(
@@ -63,6 +79,8 @@ export function ChoosePaper() {
     setPending(null);
   };
 
+  const cq = copiesQuote(state.format, state.look.hand, state.copies, false, 'standard');
+
   return (
     <div className="page">
       <div className="container">
@@ -77,24 +95,43 @@ export function ChoosePaper() {
           </p>
         </div>
 
-        <div className="mode-toggle" role="radiogroup" aria-label="How many notes?">
-          <button type="button" role="radio" aria-checked={!bulk} className="mode-opt" onClick={() => pickMode('single')}>
-            <UiIcon name="user" />
-            <span>
-              <strong>Sending one note</strong>
-              <span className="muted">One note, one address</span>
-            </span>
-          </button>
-          <Tooltip label="Upload a list from Excel. Every card greets its recipient by name." wide>
-            <button type="button" role="radio" aria-checked={bulk} className="mode-opt" onClick={() => pickMode('bulk')}>
-              <UiIcon name="users" />
-              <span>
-                <strong>Sending to many</strong>
-                <span className="muted">Bulk order with a recipient list</span>
-              </span>
-            </button>
-          </Tooltip>
+        <div className="mode-toggle" role="radiogroup" aria-label="What are you ordering?">
+          {MODES.map((m) => {
+            const button = (
+              <button key={m.mode} type="button" role="radio" aria-checked={mode === m.mode} className="mode-opt" onClick={() => pickMode(m.mode)}>
+                <UiIcon name={m.icon} />
+                <span>
+                  <strong>{m.title}</strong>
+                  <span className="muted">{m.sub}</span>
+                </span>
+              </button>
+            );
+            return m.tip ? (
+              <Tooltip key={m.mode} label={m.tip} wide>
+                {button}
+              </Tooltip>
+            ) : (
+              button
+            );
+          })}
         </div>
+
+        {mode === 'copies' && (
+          <div className="qty-row-choose" role="group" aria-labelledby="copies-label">
+            <span id="copies-label" className="qty-label">
+              How many?
+            </span>
+            <div className="qty-chips">
+              {QUICK_QTY.map((n) => (
+                <button key={n} type="button" className={`qty-chip${state.copies === n ? ' is-on' : ''}`} aria-pressed={state.copies === n} onClick={() => dispatch({ type: 'SET_COPIES', qty: n })}>
+                  {n}
+                </button>
+              ))}
+            </div>
+            <QtyInput id="copies-qty" label="Number of copies" value={state.copies} max={MAX_COPIES} onChange={(qty) => dispatch({ type: 'SET_COPIES', qty })} />
+            <span className="muted small">All copies are the same and come to you in one delivery.</span>
+          </div>
+        )}
 
         <div className="format-grid" role="radiogroup" aria-label="Paper">
           {FORMAT_ORDER.map((f) => {
@@ -118,7 +155,7 @@ export function ChoosePaper() {
                   <span className="fc-blurb">{F.blurb}</span>
                   <span className="fc-price-row">
                     <span className="fc-price">{chf(price)}</span>
-                    <span className="fc-price-note">{bulk ? `${chf(r05(price * 0.9))} from 25 pieces` : 'per machine-written piece'}</span>
+                    <span className="fc-price-note">{volume ? `${chf(r05(price * 0.9))} from 25 pieces` : 'per machine-written piece'}</span>
                   </span>
                 </span>
               </button>
@@ -156,16 +193,25 @@ export function ChoosePaper() {
 
       <BottomBar
         middle={
-          <span className="bb-price">
-            <strong>
-              {FORMATS[state.format].label} · {chf(piecePrice(state.format, state.look.hand))}
-            </strong>
-            <span className="muted">{bulk ? 'Bulk order · volume price from 25 pieces' : 'per note · delivery at checkout'}</span>
-          </span>
+          mode === 'copies' ? (
+            <span className="bb-price">
+              <strong>
+                {state.copies} × {FORMATS[state.format].label} · {chf(cq.perCard)} each
+              </strong>
+              <span className="muted">{cq.rate ? `${Math.round(cq.rate * 100)} % volume price · ` : 'Volume price from 25 pieces · '}delivery at checkout</span>
+            </span>
+          ) : (
+            <span className="bb-price">
+              <strong>
+                {FORMATS[state.format].label} · {chf(piecePrice(state.format, state.look.hand))}
+              </strong>
+              <span className="muted">{mode === 'bulk' ? 'Bulk order · volume price from 25 pieces' : 'per note · delivery at checkout'}</span>
+            </span>
+          )
         }
         right={
-          <button type="button" className="btn btn-primary" onClick={() => dispatch({ type: 'GO', step: bulk ? 'recipients' : 'design' })}>
-            {bulk ? 'Add recipients' : 'Make it yours'}
+          <button type="button" className="btn btn-primary" onClick={() => dispatch({ type: 'GO', step: mode === 'bulk' ? 'recipients' : 'design' })}>
+            {mode === 'bulk' ? 'Add recipients' : 'Make it yours'}
             <UiIcon name="arrowRight" />
           </button>
         }
@@ -181,7 +227,7 @@ export function ChoosePaper() {
               Keep my design
             </button>
             <button type="button" className="btn btn-primary" onClick={confirm}>
-              {pending?.kind === 'format' ? `Switch to ${FORMATS[pending.value].label}` : pending?.value === 'bulk' ? 'Switch to bulk order' : 'Switch to one note'}
+              {pending?.kind === 'format' ? `Switch to ${FORMATS[pending.value].label}` : pending ? MODE_SWITCH[pending.value].button : ''}
             </button>
           </div>
         }
@@ -189,7 +235,9 @@ export function ChoosePaper() {
         <p>
           {pending?.kind === 'format'
             ? `${FORMATS[pending.value].label} comes with its own starter design. Your current text and icons are replaced.`
-            : 'Bulk orders start with a design that greets every recipient by name. Your current text and icons are replaced.'}
+            : pending
+              ? MODE_SWITCH[pending.value].body
+              : ''}
         </p>
       </Modal>
     </div>

@@ -23,8 +23,12 @@ export interface ShopState {
   previewIdx: number;
   delivery: Delivery;
   bulkEnvelopes: boolean;
+  /** How many copies in "many copies" mode. */
+  copies: number;
   order: PlacedOrder | null;
 }
+
+export const MAX_COPIES = 2000;
 
 export type Action =
   | { type: 'GO'; step: Step }
@@ -54,6 +58,7 @@ export type Action =
   | { type: 'SET_PREVIEW'; idx: number }
   | { type: 'SET_DELIVERY'; delivery: Delivery }
   | { type: 'SET_BULK_ENVELOPES'; value: boolean }
+  | { type: 'SET_COPIES'; qty: number }
   | { type: 'PLACE_ORDER'; order: PlacedOrder }
   | { type: 'NEW_ORDER' };
 
@@ -78,6 +83,7 @@ function initialState(): ShopState {
     previewIdx: 0,
     delivery: 'direct',
     bulkEnvelopes: true,
+    copies: 50,
     order: null,
   };
 }
@@ -216,6 +222,8 @@ function reducer(s: ShopState, a: Action): ShopState {
       return { ...s, delivery: a.delivery };
     case 'SET_BULK_ENVELOPES':
       return { ...s, bulkEnvelopes: a.value };
+    case 'SET_COPIES':
+      return { ...s, copies: Math.max(1, Math.min(MAX_COPIES, Math.round(a.qty) || 1)) };
     case 'PLACE_ORDER':
       return { ...s, order: a.order, step: 'done' };
     case 'NEW_ORDER':

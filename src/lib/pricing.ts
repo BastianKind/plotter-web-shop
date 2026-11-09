@@ -35,6 +35,36 @@ export function singleQuote(format: FormatKey, hand: HandKey, qty: number, envel
   return { piece, qty, writing, envelopes, shipping: ship, total: writing + envelopes + ship };
 }
 
+/** Up to this many copies fit in a letter; more go as one parcel. */
+export const COPIES_LETTER_MAX = 10;
+
+export interface CopiesQuote {
+  qty: number;
+  base: number;
+  rate: number;
+  perCard: number;
+  gross: number;
+  discount: number;
+  writing: number;
+  envelopes: number;
+  parcel: boolean;
+  shipping: number;
+  total: number;
+}
+
+/** The same design many times, all delivered to the customer. */
+export function copiesQuote(format: FormatKey, hand: HandKey, qty: number, envelope: boolean, shipping: Shipping): CopiesQuote {
+  const base = piecePrice(format, hand);
+  const rate = volumeRate(qty);
+  const perCard = r05(base * (1 - rate));
+  const gross = base * qty;
+  const writing = perCard * qty;
+  const envelopes = envelope ? PRICES.envelope * qty : 0;
+  const parcel = qty > COPIES_LETTER_MAX;
+  const ship = parcel ? PRICES.bundleFlat : shipping === 'express' ? PRICES.express : PRICES.standard;
+  return { qty, base, rate, perCard, gross, discount: gross - writing, writing, envelopes, parcel, shipping: ship, total: writing + envelopes + ship };
+}
+
 export interface BulkQuote {
   count: number;
   base: number;

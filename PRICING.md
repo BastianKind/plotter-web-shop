@@ -34,11 +34,14 @@ Even with 20 % volume discount (from 250 pieces), an A5 note still leaves CHF 0.
 | Standard delivery, or postage per card in bulk orders | 1.50 | A-Post stamp CHF 1.20 in 2026, CHF 1.40 from January 2027, plus addressing and packing. |
 | Your own handwriting | + 0.50 per piece | Covers turning the customer's template into a handwriting style. A one-time fee would be fairer once this is real. |
 | A-Post Plus, one parcel for bulk orders | 6.00, 9.00 | Placeholders, not checked against Swiss Post's tariffs. |
+| Many copies (same design, delivered to you) | 1.50 up to 10 pieces, then 9.00 | Up to 10 pieces fit in a letter; more go as one parcel. |
 
 ## Examples
 
 - **One A5 note with envelope, sent by A-Post:** 1.50 + 0.50 + 1.50 = **CHF 3.50** (before: 6.50).
 - **30 A5 notes, each posted to its recipient:** 30 × 1.35 (−10 % volume price) + 30 × 0.50 envelopes + 30 × 1.50 postage = **CHF 100.50**, or CHF 3.35 per card all-in (before: 184.50).
+
+- **100 business cards, same design, delivered to you:** 100 × 0.70 (−15 % volume price) + 9.00 parcel = **CHF 79.00**.
 
 For comparison, US services such as Handwrytten charge about USD 3.25–3.75 per card plus postage.
 

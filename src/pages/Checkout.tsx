@@ -1,13 +1,14 @@
 import { useState, type ChangeEvent, type ReactNode } from 'react';
 import { BottomBar } from '../components/Bars';
 import { PaperSurface } from '../components/Paper';
+import { QtyInput } from '../components/QtyInput';
 import { Tooltip } from '../components/Tooltip';
 import { UiIcon } from '../components/UiIcon';
 import { FORMATS, HANDS, INKS, PRICES } from '../data/catalog';
 import { arrivalRange, orderNumber } from '../lib/dates';
-import { bulkQuote, chf, singleQuote } from '../lib/pricing';
-import { useShop } from '../state/shop';
-import type { Shipping } from '../types';
+import { COPIES_LETTER_MAX, bulkQuote, chf, copiesQuote, singleQuote } from '../lib/pricing';
+import { MAX_COPIES, useShop } from '../state/shop';
+import type { Mode, Shipping } from '../types';
 
 type Pay = 'card' | 'twint' | 'invoice';
 
@@ -21,8 +22,11 @@ interface Form {
   country: string;
 }
 
-const SINGLE_EXAMPLE: Form = { email: 'jamie.park@email.com', name: 'Jamie Park', company: '', street: 'Müllerstrasse 32a', plz: '8570', city: 'Weinfelden', country: 'Switzerland' };
-const BULK_EXAMPLE: Form = { email: 's.meier@muster-ag.ch', name: 'Sandra Meier', company: 'Muster AG', street: 'Industriestrasse 4', plz: '8500', city: 'Frauenfeld', country: 'Switzerland' };
+const EXAMPLES: Record<Mode, Form> = {
+  single: { email: 'jamie.park@email.com', name: 'Jamie Park', company: '', street: 'Müllerstrasse 32a', plz: '8570', city: 'Weinfelden', country: 'Switzerland' },
+  copies: { email: 'lena@kellerflorals.ch', name: 'Lena Keller', company: 'Keller Florals', street: 'Bahnhofstrasse 1', plz: '9000', city: 'St. Gallen', country: 'Switzerland' },
+  bulk: { email: 's.meier@muster-ag.ch', name: 'Sandra Meier', company: 'Muster AG', street: 'Industriestrasse 4', plz: '8500', city: 'Frauenfeld', country: 'Switzerland' },
+};
 
 const RULES: [keyof Form, (v: string) => boolean, string][] = [
   ['email', (v) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim()), 'Enter a valid email address.'],
@@ -47,19 +51,25 @@ function Section({ no, title, aside, children }: { no: string; title: string; as
 
 export function Checkout() {
   const { state, dispatch } = useShop();
-  const bulk = state.mode === 'bulk';
+  const { mode } = state;
+  const bulk = mode === 'bulk';
+  const copies = mode === 'copies';
   const F = FORMATS[state.format];
-  const [form, setForm] = useState<Form>(bulk ? BULK_EXAMPLE : SINGLE_EXAMPLE);
+  const [form, setForm] = useState<Form>(EXAMPLES[mode]);
   const [errors, setErrors] = useState<Partial<Record<keyof Form | 'consent', string>>>({});
   const [shipping, setShipping] = useState<Shipping>('standard');
   const [pay, setPay] = useState<Pay>(bulk ? 'invoice' : 'card');
   const [qty, setQty] = useState(1);
-  const [envelope, setEnvelope] = useState(true);
+  // Business cards usually go without envelopes; notes come with one.
+  const [envelope, setEnvelope] = useState(!(copies && state.format === 'card'));
   const [consent, setConsent] = useState(false);
 
   const single = singleQuote(state.format, state.look.hand, qty, envelope, shipping);
+  const cq = copiesQuote(state.format, state.look.hand, state.copies, envelope, shipping);
   const bq = bulkQuote(state.format, state.look.hand, state.recipients.length, state.delivery, state.bulkEnvelopes);
-  const total = bulk ? bq.total : single.total;
+  const total = bulk ? bq.total : copies ? cq.total : single.total;
+  const count = bulk ? state.recipients.length : copies ? state.copies : qty;
+  const parcel = copies && cq.parcel;
 
   const set = (key: keyof Form) => (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm((f) => ({ ...f, [key]: e.target.value }));
@@ -105,13 +115,13 @@ export function Checkout() {
       type: 'PLACE_ORDER',
       order: {
         number: orderNumber(),
-        mode: state.mode,
+        mode,
         firstName: form.name.trim().split(/\s+/)[0] ?? '',
         email: form.email.trim(),
-        count: bulk ? state.recipients.length : qty,
+        count,
         total,
-        direct: bulk ? state.delivery === 'direct' : true,
-        express: !bulk && shipping === 'express',
+        direct: bulk ? state.delivery === 'direct' : !copies,
+        express: !bulk && !parcel && shipping === 'express',
         placedAt: Date.now(),
       },
     });
@@ -119,6 +129,7 @@ export function Checkout() {
 
   const payLabel = pay === 'twint' ? `Pay ${chf(total)} with TWINT` : pay === 'invoice' ? `Place order · ${chf(total)}` : `Pay ${chf(total)} & place order`;
   const thumbWidth = state.format === 'card' ? 190 : state.format === 'a4' ? 120 : 130;
+  const showBadge = bulk || (copies && state.copies > 1);
 
   return (
     <div className="page">
@@ -129,7 +140,7 @@ export function Checkout() {
             <p className="page-sub">Your words are ready. We’ll write them with a real pen using a machine, so they look indistinguishable from handwriting.</p>
           </div>
           <button type="button" className="btn-link" onClick={() => dispatch({ type: 'GO', step: 'design' })}>
-            <UiIcon name="arrowLeft" size={16} /> Back to your note
+            <UiIcon name="arrowLeft" size={16} /> Back to your {copies ? 'design' : 'note'}
           </button>
         </div>
 
@@ -137,13 +148,13 @@ export function Checkout() {
           <div className="panel co-left">
             <Section no="01" title={bulk ? 'Contact' : 'Your email'} aside={bulk ? 'For the invoice and order updates' : 'For your receipt & order updates'}>
               <div className="form-grid">
-                {bulk && field('company', 'Company', { span: true, autoComplete: 'organization', optional: true })}
+                {(bulk || copies) && field('company', 'Company', { span: true, autoComplete: 'organization', optional: true })}
                 {bulk && field('name', 'Contact person', { autoComplete: 'name' })}
                 {field('email', 'Email address', { type: 'email', autoComplete: 'email', span: !bulk })}
               </div>
             </Section>
 
-            <Section no="02" title={bulk ? 'Billing address' : 'Where should it go?'}>
+            <Section no="02" title={bulk ? 'Billing address' : copies ? 'Where should we send them?' : 'Where should it go?'}>
               <div className="form-grid">
                 {!bulk && field('name', 'Full name', { autoComplete: 'name' })}
                 <div className={`field${bulk ? ' span2' : ''}`}>
@@ -169,20 +180,27 @@ export function Checkout() {
                     </button>
                   </span>
                 </div>
+              ) : parcel ? (
+                <div className="delivery-note">
+                  <UiIcon name="box" />
+                  <span>
+                    All {state.copies} {F.plural} come in one parcel to this address · {chf(PRICES.bundleFlat)}. Estimated arrival {arrivalRange(state.copies, false)}.
+                  </span>
+                </div>
               ) : (
                 <div className="options options-row">
                   <label className="option">
                     <input type="radio" name="ship" checked={shipping === 'standard'} onChange={() => setShipping('standard')} />
                     <span>
                       <strong>Standard delivery · {chf(PRICES.standard)}</strong>
-                      <span className="muted small">Made in 2–3 days. Estimated arrival {arrivalRange(qty, false)}.</span>
+                      <span className="muted small">Made in 2–3 days. Estimated arrival {arrivalRange(count, false)}.</span>
                     </span>
                   </label>
                   <label className="option">
                     <input type="radio" name="ship" checked={shipping === 'express'} onChange={() => setShipping('express')} />
                     <span>
                       <strong>A-Post Plus · {chf(PRICES.express)}</strong>
-                      <span className="muted small">Written first and tracked. Estimated arrival {arrivalRange(qty, true)}.</span>
+                      <span className="muted small">Written first and tracked. Estimated arrival {arrivalRange(count, true)}.</span>
                     </span>
                   </label>
                 </div>
@@ -191,7 +209,7 @@ export function Checkout() {
 
             <Section no="03" title="Payment details">
               <div className="options">
-                {bulk && (
+                {(bulk || copies) && (
                   <label className="option">
                     <input type="radio" name="pay" checked={pay === 'invoice'} onChange={() => setPay('invoice')} />
                     <UiIcon name="invoice" />
@@ -273,11 +291,13 @@ export function Checkout() {
           <aside className="panel summary" aria-label="Order summary">
             <div className="sum-head">
               <h2 className="sec-title">Your little keepsake</h2>
-              <span className="muted small">{bulk ? `${state.recipients.length} items` : `${qty} ${qty === 1 ? 'item' : 'items'}`}</span>
+              <span className="muted small">
+                {count} {count === 1 ? 'item' : 'items'}
+              </span>
             </div>
             <div className="sum-preview">
               <PaperSurface format={state.format} look={state.look} items={state.items} recipient={bulk ? (state.recipients[0] ?? null) : null} width={thumbWidth} className="paper-tilt" />
-              {bulk && <span className="sum-badge">× {state.recipients.length}</span>}
+              {showBadge && <span className="sum-badge">× {count}</span>}
             </div>
             <div className="sum-item">
               <div>
@@ -296,21 +316,20 @@ export function Checkout() {
             {!bulk && (
               <>
                 <div className="qty-row">
-                  <span>Quantity</span>
-                  <div className="qty">
-                    <button type="button" className="icon-btn" aria-label="One less" disabled={qty <= 1} onClick={() => setQty((q) => q - 1)}>
-                      <UiIcon name="minus" size={16} />
-                    </button>
-                    <span aria-live="polite">{qty}</span>
-                    <button type="button" className="icon-btn" aria-label="One more" disabled={qty >= 20} onClick={() => setQty((q) => q + 1)}>
-                      <UiIcon name="plus" size={16} />
-                    </button>
-                  </div>
+                  <span>
+                    Quantity
+                    {copies && <span className="muted small"> · same design on each</span>}
+                  </span>
+                  {copies ? (
+                    <QtyInput id="co-copies" label="Number of copies" value={state.copies} max={MAX_COPIES} onChange={(n) => dispatch({ type: 'SET_COPIES', qty: n })} />
+                  ) : (
+                    <QtyInput id="co-qty" label="Quantity" value={qty} max={20} onChange={setQty} />
+                  )}
                 </div>
                 <label className="addon">
                   <input type="checkbox" checked={envelope} onChange={(e) => setEnvelope(e.target.checked)} />
                   <span>
-                    <strong>Add a matching envelope</strong>
+                    <strong>Add {count > 1 ? 'matching envelopes' : 'a matching envelope'}</strong>
                     <span className="muted small">Unsealed, ready for your own finishing touch.</span>
                   </span>
                   <span className="addon-price">{chf(PRICES.envelope)}</span>
@@ -319,27 +338,27 @@ export function Checkout() {
             )}
 
             <dl className="sum-lines">
-              {bulk ? (
+              {bulk || copies ? (
                 <>
                   <div className="line">
                     <dt>
-                      Writing · {bq.count} × {chf(bq.base)}
+                      Writing · {bulk ? bq.count : cq.qty} × {chf(bulk ? bq.base : cq.base)}
                     </dt>
-                    <dd>{chf(bq.gross)}</dd>
+                    <dd>{chf(bulk ? bq.gross : cq.gross)}</dd>
                   </div>
-                  {bq.rate > 0 && (
+                  {(bulk ? bq.rate : cq.rate) > 0 && (
                     <div className="line line-discount">
                       <dt>
                         <Tooltip label="10 % from 25 pieces, 15 % from 100, 20 % from 250.">
                           <span className="dotted" tabIndex={0}>
-                            Volume price −{Math.round(bq.rate * 100)} %
+                            Volume price −{Math.round((bulk ? bq.rate : cq.rate) * 100)} %
                           </span>
                         </Tooltip>
                       </dt>
-                      <dd>{chf(-bq.discount)}</dd>
+                      <dd>{chf(-(bulk ? bq.discount : cq.discount))}</dd>
                     </div>
                   )}
-                  {bq.envelopeCount > 0 && (
+                  {bulk && bq.envelopeCount > 0 && (
                     <div className="line">
                       <dt>
                         Envelopes · {bq.envelopeCount} × {chf(PRICES.envelope)}
@@ -347,9 +366,27 @@ export function Checkout() {
                       <dd>{chf(bq.envelopes)}</dd>
                     </div>
                   )}
+                  {copies && envelope && (
+                    <div className="line">
+                      <dt>
+                        Envelopes · {cq.qty} × {chf(PRICES.envelope)}
+                      </dt>
+                      <dd>{chf(cq.envelopes)}</dd>
+                    </div>
+                  )}
                   <div className="line">
-                    <dt>{bq.direct ? `Postage A-Post · ${bq.count} × ${chf(PRICES.postEach)}` : 'Delivery to one address'}</dt>
-                    <dd>{chf(bq.postage)}</dd>
+                    <dt>
+                      {bulk
+                        ? bq.direct
+                          ? `Postage A-Post · ${bq.count} × ${chf(PRICES.postEach)}`
+                          : 'Delivery to one address'
+                        : parcel
+                          ? 'Parcel to your address'
+                          : shipping === 'express'
+                            ? 'A-Post Plus'
+                            : 'Standard delivery'}
+                    </dt>
+                    <dd>{chf(bulk ? bq.postage : cq.shipping)}</dd>
                   </div>
                 </>
               ) : (
@@ -375,7 +412,10 @@ export function Checkout() {
                 <dd>{chf(total)}</dd>
               </div>
             </dl>
-            <p className="muted tiny">CHF · All applicable taxes included</p>
+            <p className="muted tiny">
+              CHF · All applicable taxes included
+              {copies && !parcel ? ` · more than ${COPIES_LETTER_MAX} copies ship as a parcel` : ''}
+            </p>
 
             <button type="button" className="btn btn-primary btn-block" onClick={place}>
               {payLabel} <UiIcon name="arrowRight" />
@@ -392,13 +432,15 @@ export function Checkout() {
       <BottomBar
         left={
           <button type="button" className="btn btn-ghost" onClick={() => dispatch({ type: 'GO', step: 'design' })}>
-            <UiIcon name="arrowLeft" /> Back to your note
+            <UiIcon name="arrowLeft" /> Back to your {copies ? 'design' : 'note'}
           </button>
         }
         middle={
           <span className="bb-price">
             <strong>{chf(total)}</strong>
-            <span className="muted">{bulk ? `${state.recipients.length} cards` : `${qty} × ${F.label} ${F.noun}`} · incl. delivery</span>
+            <span className="muted">
+              {bulk ? `${state.recipients.length} cards` : copies ? `${state.copies} ${F.plural}` : `${qty} × ${F.label} ${F.noun}`} · incl. delivery
+            </span>
           </span>
         }
         right={
