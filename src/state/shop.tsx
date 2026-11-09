@@ -44,6 +44,11 @@ export type Action =
   | { type: 'SET_LOOK'; patch: Partial<Look> }
   | { type: 'SET_RECIPIENTS'; list: Recipient[]; name: string; isSample: boolean; notes?: string[] }
   | { type: 'LOAD_SAMPLE' }
+  | { type: 'START_MANUAL_LIST' }
+  | { type: 'UPDATE_RECIPIENT'; index: number; patch: Partial<Recipient> }
+  /** Insert rows after `after` (or append). If the row at `replace` is empty, it is replaced. */
+  | { type: 'INSERT_RECIPIENTS'; list: Recipient[]; after?: number; replace?: number }
+  | { type: 'REMOVE_RECIPIENT'; index: number }
   | { type: 'CLEAR_RECIPIENTS' }
   | { type: 'SET_LIST_NOTES'; notes: string[] }
   | { type: 'SET_PREVIEW'; idx: number }
@@ -82,6 +87,16 @@ function commitItems(s: ShopState, items: Item[], selectedId = s.selectedId): Sh
   return { ...s, items, selectedId, past: [...s.past, s.items].slice(-MAX_HISTORY), future: [], pending: null };
 }
 
+export const emptyRecipient = (): Recipient => ({ first: '', last: '', street: '', plz: '', city: '' });
+const hasName = (r: Recipient) => Boolean(r.first.trim() || r.last.trim());
+const isBlank = (r: Recipient) => !Object.values(r).some((v) => v.trim());
+
+/** Any hand edit turns the example list into the customer's own list. */
+function editedList(s: ShopState, recipients: Recipient[], previewIdx = s.previewIdx): ShopState {
+  const listName = s.isSample ? 'Example list, edited' : s.listName || 'Added by hand';
+  return { ...s, recipients, isSample: false, listName, previewIdx: Math.max(0, Math.min(previewIdx, recipients.length - 1)) };
+}
+
 function freshDesign(s: ShopState, format: FormatKey, mode: Mode): ShopState {
   const items = defaultItems(format, mode);
   return { ...s, format, mode, items, selectedId: firstTextId(items), past: [], future: [], pending: null };
@@ -92,6 +107,11 @@ function reducer(s: ShopState, a: Action): ShopState {
     case 'GO': {
       if (a.step === 'recipients' && s.mode !== 'bulk') return s;
       const selectedId = a.step === 'design' && !s.items.some((i) => i.id === s.selectedId) ? firstTextId(s.items) : s.selectedId;
+      // Rows without a name are dropped once the customer leaves the list.
+      if (s.step === 'recipients' && a.step !== 'recipients' && s.recipients.some((r) => !hasName(r))) {
+        const recipients = s.recipients.filter(hasName);
+        return { ...s, step: a.step, selectedId, recipients, previewIdx: Math.min(s.previewIdx, Math.max(0, recipients.length - 1)) };
+      }
       return { ...s, step: a.step, selectedId };
     }
     case 'SET_MODE': {
@@ -162,6 +182,30 @@ function reducer(s: ShopState, a: Action): ShopState {
       return { ...s, recipients: a.list, listName: a.name, isSample: a.isSample, listNotes: a.notes ?? [], previewIdx: 0 };
     case 'LOAD_SAMPLE':
       return { ...s, recipients: SAMPLE_RECIPIENTS.map((r) => ({ ...r })), listName: SAMPLE_LIST_NAME, isSample: true, listNotes: [], previewIdx: 0 };
+    case 'START_MANUAL_LIST':
+      return { ...s, recipients: [emptyRecipient()], listName: 'Added by hand', isSample: false, listNotes: [], previewIdx: 0 };
+    case 'UPDATE_RECIPIENT': {
+      if (!s.recipients[a.index]) return s;
+      const recipients = s.recipients.map((r, i) => (i === a.index ? { ...r, ...a.patch } : r));
+      return editedList(s, recipients, a.index);
+    }
+    case 'INSERT_RECIPIENTS': {
+      const list = [...s.recipients];
+      let at: number;
+      if (a.replace != null && list[a.replace] && isBlank(list[a.replace])) {
+        list.splice(a.replace, 1, ...a.list);
+        at = a.replace;
+      } else {
+        at = a.after != null ? a.after + 1 : list.length;
+        list.splice(at, 0, ...a.list);
+      }
+      return editedList(s, list, at);
+    }
+    case 'REMOVE_RECIPIENT': {
+      const recipients = s.recipients.filter((_, i) => i !== a.index);
+      const next = editedList(s, recipients, a.index <= s.previewIdx ? s.previewIdx - 1 : s.previewIdx);
+      return recipients.length ? next : { ...next, listName: '' };
+    }
     case 'CLEAR_RECIPIENTS':
       return { ...s, recipients: [], listName: '', isSample: false, listNotes: [], previewIdx: 0 };
     case 'SET_LIST_NOTES':

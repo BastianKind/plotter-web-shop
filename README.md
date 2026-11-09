@@ -22,7 +22,9 @@ Then open http://localhost:5173.
 - **Editor:** drag and resize text and icons on the paper, add text boxes, icons or your own SVG, undo/redo (Ctrl+Z / Ctrl+Y), zoom, alignment, handwriting style, ink colour and a full-size preview.
 - **Pop-ups:** help/FAQ, preview, "start a fresh design?" confirmation, tooltips, toasts.
 
-Prices are placeholders in CHF. Card fields at checkout show fixed demo values and can't be edited.
+Prices are in CHF and based on the cost calculation in [PRICING.md](PRICING.md) (paper, ink, power, machine wear, handling and margin). Card fields at checkout show fixed demo values and can't be edited.
+
+For bulk orders, small lists can be typed straight into the table (or pasted from Excel); uploading an `.xlsx` or `.csv` file is meant for long lists.
 
 ## Stack
 

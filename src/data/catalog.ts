@@ -20,7 +20,7 @@ export const FORMATS: Record<FormatKey, FormatInfo> = {
     label: 'A4',
     w: 210,
     h: 297,
-    price: 4.5,
+    price: 2.5,
     sizeLabel: '210 × 297 mm',
     blurb: 'For longer letters & big ideas.',
     orientation: 'Portrait',
@@ -31,7 +31,7 @@ export const FORMATS: Record<FormatKey, FormatInfo> = {
     label: 'A5',
     w: 148,
     h: 210,
-    price: 3.5,
+    price: 1.5,
     sizeLabel: '148 × 210 mm',
     blurb: 'A little room for something personal.',
     orientation: 'Portrait',
@@ -43,7 +43,7 @@ export const FORMATS: Record<FormatKey, FormatInfo> = {
     label: 'Business card',
     w: 85,
     h: 55,
-    price: 2,
+    price: 0.8,
     sizeLabel: '85 × 55 mm',
     blurb: 'Small in size. Lasting in impression.',
     orientation: 'Landscape',
@@ -73,8 +73,8 @@ export const HANDS: Record<HandKey, HandInfo> = {
     short: 'Your handwriting',
     family: '"Caveat", "Segoe Print", cursive',
     factor: 1,
-    fee: 1,
-    hint: '+ CHF 1.00 per piece',
+    fee: 0.5,
+    hint: '+ CHF 0.50 per piece',
   },
 };
 
@@ -93,12 +93,16 @@ export const SIZES: Record<SizeKey, string> = {
   mixed: 'Mixed',
 };
 
-/** Placeholder prices for the prototype, in CHF. */
+/**
+ * Prices in CHF, worked out in PRICING.md: material, power and machine wear,
+ * a minute of handling, then roughly doubled for margin.
+ * Postage covers the A-Post stamp (CHF 1.20 in 2026, CHF 1.40 from 2027) plus packing.
+ */
 export const PRICES = {
   envelope: 0.5,
-  standard: 2.5,
+  standard: 1.5,
   express: 6,
-  postEach: 2.5,
+  postEach: 1.5,
   bundleFlat: 9,
 };
 
